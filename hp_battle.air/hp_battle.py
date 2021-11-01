@@ -18,7 +18,7 @@ def checkend():
     if(exists(Template(r"tpl1633492461058.png", record_pos=(0.265, -0.078), resolution=(2960, 1440))) or exists(Template(r"tpl1633494997003.png", record_pos=(0.312, 0.223), resolution=(2960, 1440)))):
         back_btn = exists(Template(r"tpl1633190657081.png", record_pos=(0.007, 0.225), resolution=(1664, 936)));
             
-        touch(back_btn or (2095, 1215));
+        touch(back_btn or (2095 + 80, 1215));
         return True;
     if(exists(Template(r"tpl1635640690144.png", record_pos=(-0.008, -0.175), resolution=(2960, 1440)))):
 
@@ -91,9 +91,11 @@ def auto_move():
     touch(move_pos[rand]);
 
 def do_class():
-    if(exists(Template(r"tpl1633185678000.png", record_pos=(0.349, 0.23), resolution=(1664, 936)))):
+    start_btn = exists(Template(r"tpl1633185678000.png", record_pos=(0.349, 0.23), resolution=(1664, 936))) or exists(Template(r"tpl1635641158645.png", record_pos=(0.382, 0.191), resolution=(2960, 1440)));
 
-        touch(Template(r"tpl1633185678000.png", record_pos=(0.349, 0.23), resolution=(1664, 936)));
+    if(start_btn):
+
+        touch(start_btn);
     while(exists(Template(r"tpl1633443031866.png", record_pos=(-0.025, -0.217), resolution=(2960, 1440))) or (not checkend())):
         auto_magic();
 for x in range(1500):
