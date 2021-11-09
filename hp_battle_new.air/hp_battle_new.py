@@ -1,5 +1,6 @@
 # -*- encoding=utf8 -*-
 __author__ = "zhouyan"
+Version = "v1.1-20211109"
 
 from airtest.core.api import *
 from airtest.core.android.android import *
@@ -11,8 +12,12 @@ ST.THRESHOLD = 0.75
 ST.FIND_TIMEOUT_TMP = 0.2
 # 设定匹配算法
 ST.CVSTRATEGY = ['sift']
+ST.SAVE_IMAGE = False;
+# 强制战斗模式
+ForceBattle = False
 
 # 禁林模式
+# FFMode = False
 FFMode = True
 
 # 五个战斗卡牌位置，相对于resolution=(1664, 1040)
@@ -31,18 +36,33 @@ ff_swipe = [
 ]
 
 # 战斗移动点
-move_pos = [
-    (200, 700),
-    (200, 500),
-    (200, 300),
-    (800, 700),
-    (800, 300),
+if FFMode:
+    # 禁林战斗位置
+    move_pos = [
+        (200, 700),
+        (600, 700),
+        (1000, 700),
+        (1400, 700),
+    ]
+else:
+    # 对战战斗位置
+    move_pos = [
+        (200, 700),
+        (200, 500),
+        (200, 300),
+    ]
+
+# 不知道卡在哪里的时候尝试点击解套
+safe_pos = [
+    (700, 980),
+    (10, 900),
+    (10, 900),
 ]
 
 def main():
     # 默认初始化
     auto_setup(__file__)
-    print(">>>>>> start...")
+    print(">>>>>> start " + Version)
     # 自适应分辨率调整坐标值
     (width, height) = Android().get_current_resolution()
     for i in range(len(slot_pos)):
@@ -69,7 +89,7 @@ def do_main_loop():
             wander_count = 0
         else:
             # 不知道在哪里，点击技能卡的位置试图过场
-            do_simple_click(slot_pos[1])
+            do_simple_click(safe_pos[1])
             wander_count += 1
 
 def try_find(image):
@@ -86,7 +106,7 @@ def try_touch(image):
         return False
 
 def fast_check_battle():
-    if try_find("battle_star.png") or try_find("move_card.png"):
+    if ForceBattle or try_find("battle_star.png") or try_find("move_card.png"):
         print(">>>>>>>>>>>> fast battle check: true\n")
         return True
     else:
@@ -107,6 +127,8 @@ def auto_magic():
     for i in range(len(slot_pos)):
         if FFMode and i == 0:    # 禁林中不使用伙伴卡
             continue
+        elif not fast_check_battle(): #增大间隔
+            return;
         else:
             do_simple_click(slot_pos[i])
 
@@ -115,7 +137,7 @@ def auto_move():
     global move_threshold
     move_threshold += 1
     if move_threshold >= 2:
-        if try_find("battle_star.png") or try_find("move_card.png"):
+        if fast_check_battle():
             rand = random.randint(0, len(move_pos) - 1)
             touch(move_pos[rand])
             move_threshold = 0
@@ -152,14 +174,26 @@ def try_start():
 def try_end():
     return find_and_touch("back.png")
 
-def try_fix_error():    
+def try_fix_error():
     # 修复误入聊天界面
-    return find_and_touch_with_cond("back_arrow.png", "go_to_community.png") or find_and_touch_with_cond("back_arrow.png", "choose_star.png")
+    if find_and_touch_with_cond("back_arrow.png", "go_to_community.png"):
+        return True
+    # 修复卡在选取禁林星级界面
+    if find_and_touch_with_cond("back_arrow.png", "choose_star.png"):
+        return True
+    # 修复卡在使用回响界面
+    if find_and_touch_with_cond("back_arrow.png", "use.png"):
+        return True
+    # 修复意外弹窗导致主界面卡住
+    for pos in safe_pos:
+        touch(pos)
+        sleep(1.0)
+    return False
 
 def try_touch_series(image_list):
     for image in image_list:
         success = False
-        # 重试30秒时间以跳过邀请
+        # 重试40秒时间以跳过邀请弹框
         for i in range(40):
             if try_touch(image):
                 success = True
